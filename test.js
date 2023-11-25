@@ -42,7 +42,7 @@ async function encontrarCapitulosComImagens() {
     console.log(urlsCapitulosComImagens);
     return JSON.stringify(urlsCapitulosComImagens, null, 2);
 
-    
+
 }
 
 async function obterInformacoesManga() {
@@ -70,62 +70,60 @@ async function obterInformacoesManga() {
     }
 }
 
-async function mangas() {
-axios.get('https://ghostscan.com.br')
-.then(response => {
-  const html = response.data;
-  const $ = cheerio.load(html);
+async function manga() {
+    try {
+        const response = await axios.get('https://ghostscan.com.br');
+        const html = response.data;
+        const $ = cheerio.load(html);
 
-  const mangaInfo = [];
+        const mangaInfo = [];
 
-  $('.col-6.col-md-3.badge-pos-2').each((index, element) => {
-    const manga = {};
+        $('.col-6.col-md-3.badge-pos-2').each((index, element) => {
+            const manga = {};
 
-    const title = $(element).find('.post-title.font-title h3 a').text().trim();
-    const imageUrl = $(element).find('.item-thumb.c-image-hover img').attr('src');
-    const mangaType = $(element).find('.manga-type').text().trim();
-    const rating = $(element).find('.post-total-rating.allow_vote .score').text().trim();
+            const title = $(element).find('.post-title.font-title h3 a').text().trim();
+            const imageUrl = $(element).find('.item-thumb.c-image-hover img').attr('src');
+            const mangaType = $(element).find('.manga-type').text().trim();
+            const rating = $(element).find('.post-total-rating.allow_vote .score').text().trim();
+            const link = $(element).find('.item-thumb.c-image-hover a').attr('href');
 
-    // Verificar se o tipo não é "Novel"
-    if (mangaType.toLowerCase() !== 'novel') {
-      manga.title = title;
-      manga.imageUrl = imageUrl;
-      manga.mangaType = mangaType;
-      manga.rating = rating;
+            if (mangaType.toLowerCase() !== 'novel') {
+                manga.title = title;
+                manga.imageUrl = imageUrl;
+                manga.mangaType = mangaType;
+                manga.rating = rating;
+                manga.link = link ? link.replace('https://ghostscan.com.br/', '') : ''; // Remover a parte inicial do link
 
-      const chapters = [];
+                const chapters = [];
 
-      $(element).find('.list-chapter .chapter-item').each((index, el) => {
-        const chapter = {};
+                $(element).find('.list-chapter .chapter-item').each((index, el) => {
+                    const chapter = {};
 
-        const chapterTitle = $(el).find('.chapter a').text().trim();
-        const chapterLink = $(el).find('.chapter a').attr('href');
-        const season = $(el).find('.vol a').text().trim();
-        const publishedAgo = $(el).find('.post-on a').attr('title');
+                    const chapterTitle = $(el).find('.chapter a').text().trim();
+                    const chapterLink = $(el).find('.chapter a').attr('href');
+                    const season = $(el).find('.vol a').text().trim();
+                    const publishedAgo = $(el).find('.post-on a').attr('title');
 
-        chapter.chapterTitle = chapterTitle;
-        chapter.chapterLink = chapterLink;
-        chapter.season = season;
-        chapter.publishedAgo = publishedAgo;
+                    chapter.chapterTitle = chapterTitle;
+                    chapter.chapterLink = chapterLink;
+                    chapter.season = season;
+                    chapter.publishedAgo = publishedAgo;
 
-        chapters.push(chapter);
-      });
+                    chapters.push(chapter);
+                });
 
-      manga.chapters = chapters;
-      mangaInfo.push(manga);
+                manga.chapters = chapters;
+                mangaInfo.push(manga);
+            }
+        });
+
+        return mangaInfo;
+    } catch (error) {
+        throw new Error('Erro ao obter os dados dos mangás: ' + error.message);
     }
-  });
-
-  return mangaInfo;
-  console.log(mangaInfo);
-})
-.catch(error => {
-  console.log(error);
-});
 }
 
+
 module.exports = {
-  obterInformacoesManga,
-  encontrarCapitulosComImagens,
-  mangas,
+    manga
 }
